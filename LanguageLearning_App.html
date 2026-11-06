@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Language Learning App - CodeAlpha</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
+  body{background:#f0f2ff;min-height:100vh;padding:20px}
+  .container{max-width:800px;margin:0 auto}
+  header{text-align:center;margin-bottom:20px}
+  header h1{font-size:32px;color:#4f46e5}
+  header p{color:#666;margin-top:5px}
+  .card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.08);margin-bottom:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  select,button{padding:12px 16px;border-radius:10px;border:1px solid #ddd;font-size:15px;cursor:pointer}
+  select{flex:1;background:#fff}
+  .tab-btn{flex:1;background:#eef2ff;border:1px solid #c7d2fe;color:#4338ca;font-weight:700}
+  .tab-btn.active{background:#4f46e5;color:#fff}
+  .flashcard{height:230px;perspective:1000px;cursor:pointer;margin:16px 0}
+  .inner{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+  .flashcard.flipped .inner{transform:rotateY(180deg)}
+  .front,.back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+  .front{background:#4f46e5;color:#fff}
+  .back{background:#f59e0b;color:#fff;transform:rotateY(180deg)}
+  .front h2,.back h2{font-size:36px;margin-bottom:8px}
+  .front p,.back p{opacity:.9}
+  .hint{font-size:13px;color:#888;text-align:center;margin-top:8px}
+  .btn{flex:1;background:#4f46e5;color:#fff;border:none;font-weight:700}
+  .btn.secondary{background:#fff;color:#4f46e5;border:1px solid #c7d2fe}
+  .btn.green{background:#16a34a}
+  .list{display:grid;gap:10px;margin-top:14px}
+  .item{display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:14px 16px;border-radius:12px;border:1px solid #e2e8f0}
+  .item b{font-size:16px}
+  .item span{color:#4f46e5;font-weight:700}
+  .badge{display:inline-block;background:#dcfce7;color:#166534;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .quiz-q{font-size:22px;font-weight:700;margin:10px 0}
+  .opt{display:block;width:100%;text-align:left;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}
+  .opt.correct{background:#dcfce7;border-color:#16a34a}
+  .opt.wrong{background:#fee2e2;border-color:#dc2626}
+  .progress{height:10px;background:#e5e7eb;border-radius:20px;overflow:hidden;margin:12px 0}
+  .progress div{height:100%;background:#4f46e5;width:0%;transition:.3s}
+  footer{text-align:center;color:#888;font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🌍 Language Learning App</h1>
+    <p>Learn Words • Practice • Take Quiz | CodeAlpha Task 4</p>
+  </header>
+
+  <div class="card">
+    <label><b>1. Select Language:</b></label>
+    <div class="row" style="margin-top:10px">
+      <select id="lang" onchange="changeLang()">
+        <option value="hindi">English → Hindi</option>
+        <option value="spanish">English → Spanish</option>
+        <option value="french">English → French</option>
+      </select>
+      <select id="category" onchange="changeCategory()">
+        <option value="vocabulary">📚 Vocabulary</option>
+        <option value="phrases">💬 Daily Phrases</option>
+        <option value="grammar">📖 Grammar / Basics</option>
+      </select>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="tab-btn active" id="btnLearn" onclick="showTab('learn')">Learn / Flashcards</button>
+      <button class="tab-btn" id="btnQuiz" onclick="showTab('quiz')">Take Quiz</button>
+    </div>
+
+    <!-- LEARN SECTION -->
+    <div id="learnSection">
+      <div class="flashcard" id="flashcard" onclick="this.classList.toggle('flipped')">
+        <div class="inner">
+          <div class="front"><p id="catLabel">VOCABULARY</p><h2 id="frontWord">Hello</h2><p>Click to see meaning</p></div>
+          <div class="back"><p>Meaning</p><h2 id="backWord">Namaste</h2><p id="pron">Pronunciation: Huh-loh</p></div>
+        </div>
+      </div>
+      <p class="hint">Card pe click karo - peeche meaning dikhega</p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn secondary" onclick="prevCard()">← Previous</button>
+        <button class="btn" onclick="nextCard()">Next →</button>
+      </div>
+      <p style="text-align:center;margin-top:10px;color:#666"><span id="counter">1 / 8</span> • <span class="badge" id="learnedBadge">0 Learned</span></p>
+
+      <div class="list" id="wordList"></div>
+    </div>
+
+    <!-- QUIZ SECTION -->
+    <div id="quizSection" style="display:none">
+      <div style="display:flex;justify-content:space-between"><b>Quiz Mode</b><b id="scoreText">Score: 0 / 0</b></div>
+      <div class="progress"><div id="progressBar"></div></div>
+      <p id="quizQ" class="quiz-q">What is meaning of Hello?</p>
+      <div id="options"></div>
+      <div class="row">
+        <button class="btn green" onclick="nextQuiz()">Next Question →</button>
+        <button class="btn secondary" onclick="resetQuiz()">Restart Quiz</button>
+      </div>
+      <p id="quizResult" style="text-align:center;margin-top:12px;font-weight:700"></p>
+    </div>
+  </div>
+
+  <footer>Made for CodeAlpha Internship • Task 4 - Language Learning App</footer>
+</div>
+
+<script>
+const data = {
+  hindi: {
+    vocabulary: [
+      {en:"Hello", tr:"Namaste", pron:"Huh-loh"},
+      {en:"Water", tr:"Paani", pron:"Paa-nee"},
+      {en:"Book", tr:"Kitaab", pron:"Ki-taab"},
+      {en:"Friend", tr:"Dost", pron:"Dost"},
+      {en:"School", tr:"School / Vidyalaya", pron:"Vid-ya-laya"},
+      {en:"Food", tr:"Khaana", pron:"Khaa-naa"},
+      {en:"Love", tr:"Pyaar", pron:"Pyaar"},
+      {en:"Thank You", tr:"Dhanyavaad", pron:"Dhun-ya-vaad"}
+    ],
+    phrases: [
+      {en:"How are you?", tr:"Tum kaise ho?", pron:"Tum kai-se ho?"},
+      {en:"Good Morning", tr:"Shubh Prabhaat", pron:"Shubh Pra-bhaat"},
+      {en:"I love you", tr:"Main tumse pyaar karta hu", pron:"Main tum-se pyaar..."},
+      {en:"Where are you going?", tr:"Tum kaha ja rahe ho?", pron:"Tum ka-ha ja ra-he ho?"},
+      {en:"Please help me", tr:"Kripya meri madad karo", pron:"Krip-ya meri ma-dad ka-ro"}
+    ],
+    grammar: [
+      {en:"I am learning", tr:"Main seekh raha hu", pron:"Main seekh ra-ha hu"},
+      {en:"This is my book", tr:"Ye meri kitaab hai", pron:"Ye me-ri ki-taab hai"},
+      {en:"She is my friend", tr:"Wo meri dost hai", pron:"Wo me-ri dost hai"},
+      {en:"We are going home", tr:"Hum ghar ja rahe hain", pron:"Hum ghar ja ra-he hain"}
+    ]
+  },
+  spanish: {
+    vocabulary: [
+      {en:"Hello", tr:"Hola", pron:"Oh-la"},
+      {en:"Water", tr:"Agua", pron:"Ah-gwa"},
+      {en:"Book", tr:"Libro", pron:"Lee-bro"},
+      {en:"Friend", tr:"Amigo", pron:"Ah-mee-go"},
+      {en:"Food", tr:"Comida", pron:"Ko-mee-da"},
+      {en:"Love", tr:"Amor", pron:"Ah-mor"},
+      {en:"Thank You", tr:"Gracias", pron:"Gra-see-as"}
+    ],
+    phrases: [
+      {en:"How are you?", tr:"¿Cómo estás?", pron:"Ko-mo es-tas?"},
+      {en:"Good Morning", tr:"Buenos días", pron:"Bweh-nos dee-as"},
+      {en:"I love you", tr:"Te quiero", pron:"Teh kyeh-ro"}
+    ],
+    grammar: [
+      {en:"I am learning", tr:"Estoy aprendiendo", pron:"Es-toy a-pren-dyen-do"},
+      {en:"This is my book", tr:"Este es mi libro", pron:"Es-te es mi lee-bro"}
+    ]
+  },
+  french: {
+    vocabulary: [
+      {en:"Hello", tr:"Bonjour", pron:"Bon-zhoor"},
+      {en:"Water", tr:"Eau", pron:"Oh"},
+      {en:"Book", tr:"Livre", pron:"Leev-ruh"},
+      {en:"Friend", tr:"Ami", pron:"Ah-mee"},
+      {en:"Food", tr:"Nourriture", pron:"Noo-ree-ture"},
+      {en:"Thank You", tr:"Merci", pron:"Mair-see"}
+    ],
+    phrases: [
+      {en:"How are you?", tr:"Comment ça va?", pron:"Ko-mon sa va?"},
+      {en:"Good Morning", tr:"Bonjour", pron:"Bon-zhoor"},
+      {en:"I love you", tr:"Je t'aime", pron:"Zhuh tem"}
+    ],
+    grammar: [
+      {en:"I am learning", tr:"J'apprends", pron:"Zha-pron"},
+      {en:"This is my book", tr:"C'est mon livre", pron:"Say mon leev-ruh"}
+    ]
+  }
+};
+
+let lang='hindi', cat='vocabulary', index=0, learned=0;
+let quizIndex=0, score=0, total=0;
+
+function getList(){ return data[lang][cat]; }
+function updateCard(){
+  const list=getList();
+  const item=list[index];
+  document.getElementById('frontWord').innerText=item.en;
+  document.getElementById('backWord').innerText=item.tr;
+  document.getElementById('pron').innerText='Pronunciation: '+item.pron;
+  document.getElementById('catLabel').innerText=cat.toUpperCase();
+  document.getElementById('counter').innerText=(index+1)+' / '+list.length;
+  document.getElementById('flashcard').classList.remove('flipped');
+  renderList();
+}
+function renderList(){
+  const list=getList();
+  document.getElementById('wordList').innerHTML = list.map((w,i)=>`<div class="item"><div><b>${w.en}</b><br><small style="color:#888">${w.pron}</small></div><span>${w.tr}</span></div>`).join('');
+}
+function nextCard(){ const list=getList(); index=(index+1)%list.length; learned++; document.getElementById('learnedBadge').innerText=learned+' Learned'; localStorage.setItem('learned', learned); updateCard(); }
+function prevCard(){ const list=getList(); index=(index-1+list.length)%list.length; updateCard(); }
+function changeLang(){ lang=document.getElementById('lang').value; index=0; updateCard(); resetQuiz(); }
+function changeCategory(){ cat=document.getElementById('category').value; index=0; updateCard(); resetQuiz(); }
+function showTab(tab){
+  document.getElementById('learnSection').style.display = tab==='learn'?'block':'none';
+  document.getElementById('quizSection').style.display = tab==='quiz'?'block':'none';
+  document.getElementById('btnLearn').classList.toggle('active', tab==='learn');
+  document.getElementById('btnQuiz').classList.toggle('active', tab==='quiz');
+  if(tab==='quiz') loadQuiz();
+}
+function loadQuiz(){
+  const list=getList();
+  const item=list[quizIndex % list.length];
+  document.getElementById('quizQ').innerText = `What is the meaning of "${item.en}" ?`;
+  // create options: correct + 3 random
+  let opts=[item.tr];
+  while(opts.length<4){
+    let r=list[Math.floor(Math.random()*list.length)].tr;
+    if(!opts.includes(r)) opts.push(r);
+  }
+  opts=opts.sort(()=>Math.random()-0.5);
+  document.getElementById('options').innerHTML=opts.map(o=>`<button class="opt" onclick="checkAnswer(this,'${o}','${item.tr}')">${o}</button>`).join('');
+  document.getElementById('progressBar').style.width = (quizIndex/list.length*100)+'%';
+  document.getElementById('scoreText').innerText=`Score: ${score} / ${total}`;
+}
+function checkAnswer(btn, selected, correct){
+  total++;
+  const all=document.querySelectorAll('.opt');
+  all.forEach(b=>b.disabled=true);
+  if(selected===correct){ btn.classList.add('correct'); score++; document.getElementById('quizResult').innerText='✅ Correct! Great Job!'; }
+  else{ btn.classList.add('wrong'); document.getElementById('quizResult').innerText='❌ Wrong! Correct answer: '+correct; all.forEach(b=>{ if(b.innerText===correct) b.classList.add('correct'); }); }
+  document.getElementById('scoreText').innerText=`Score: ${score} / ${total}`;
+  localStorage.setItem('quizScore', score);
+}
+function nextQuiz(){ quizIndex++; document.getElementById('quizResult').innerText=''; loadQuiz(); }
+function resetQuiz(){ quizIndex=0; score=0; total=0; document.getElementById('quizResult').innerText=''; loadQuiz(); }
+updateCard();
+</script>
+</body>
+</html>
+
